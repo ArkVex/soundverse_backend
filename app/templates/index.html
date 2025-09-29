@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soundverse Clips</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Soundverse Clips</h1>
+            <p>Discover and stream short audio previews</p>
+        </div>
+        <ul class="clip-list" id="clip-list"></ul>
+    </div>
+    <script>
+    async function fetchClips() {
+        const res = await fetch('clips');
+        const clips = await res.json();
+        const list = document.getElementById('clip-list');
+        list.innerHTML = '';
+        clips.forEach(clip => {
+            const li = document.createElement('li');
+            li.className = 'clip';
+            li.innerHTML = `
+                <div class=\"clip-title\">${clip.title} <span style='color:#64748b;font-size:0.95rem'>(ID: ${clip.id})</span></div>
+                <div class=\"clip-meta\">${clip.genre} • ${clip.duration}</div>
+                <div class=\"clip-meta\">${clip.description}</div>
+                <audio class=\"audio-player\" data-clip-id=\"${clip.id}\" controls src=\"clips/${clip.id}/stream\"></audio>
+                <div class=\"button-row\">
+                    <button onclick=\"showStats(${clip.id})\">Stats</button>
+                    <button onclick=\"streamClip(${clip.id})\">Stream</button>
+                </div>
+                <div class=\"stats\" id=\"stats-${clip.id}\">Loading stats...</div>
+            `;
+            list.appendChild(li);
+            fetch(`clips/${clip.id}/stats`).then(r => r.json()).then(stats => {
+                document.getElementById(`stats-${clip.id}`).textContent = `Played ${stats.play_count} times`;
+            });
+        });
+    }
+    fetchClips();
+    // Button handlers for song cards
+    function showStats(id) {
+        fetch(`clips/${id}/stats`).then(r => r.json()).then(stats => {
+            alert(`Clip ID: ${id}\nPlayed ${stats.play_count} times`);
+        });
+    }
+
+    function streamClip(id) {
+        const audio = document.querySelector(`audio[data-clip-id="${id}"]`);
+        if (audio) {
+            audio.play();
+        }
+    }
+    </script>
+</body>
+</html>
+from starlette_exporter import PrometheusMiddleware, handle_metrics
+
+app.add_middleware(PrometheusMiddleware)
+app.add_route("/metrics", handle_metrics)
